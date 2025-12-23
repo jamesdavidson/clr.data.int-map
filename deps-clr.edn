@@ -1,0 +1,4 @@
+{:paths ["src/main/clojure"]
+ :aliases {:test
+           {:extra-paths ["test/main/clojure"]
+            :extra-deps {io.github.clojure/clr.test.check {:git/tag "v1.1.2" :git/sha "26f34e6"}}}}}
