@@ -126,6 +126,10 @@
   (seq [this]
     (iterator-seq (.iterator this)))
 
+  System.Collections.IEnumerable
+  (^System.Collections.IEnumerator GetEnumerator [this]
+    (.iterator this))
+
   clojure.lang.Reversible
   (rseq [_]
     (iterator-seq (.iterator root INode+IterationType/ENTRIES true)))
@@ -325,6 +329,10 @@
   (seq [this]
     (iterator-seq (.iterator root INode+IterationType/ENTRIES false)))
 
+  System.Collections.IEnumerable
+  (^System.Collections.IEnumerator GetEnumerator [_]
+    (.iterator root INode+IterationType/ENTRIES false))
+
   Object
   (GetHashCode [this]
     (reduce
@@ -499,6 +507,10 @@
   clojure.lang.Seqable
   (seq [_]
     (iterator-seq (.elements int-set 0 false)))
+
+  System.Collections.IEnumerable
+  (^System.Collections.IEnumerator GetEnumerator [_]
+    (.elements int-set 0 false))
 
   clojure.lang.IFn
   (invoke [this idx]
