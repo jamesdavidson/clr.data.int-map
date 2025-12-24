@@ -194,18 +194,30 @@ public class IntSet : ISet {
     return val >> log2LeafSize;
   }
 
-  private short leafOffset(long val) {
+  private static short leafOffset(short leafSize, long val) {
     return (short) (val & (leafSize - 1));
   }
 
-  public ISet add(long epoch, long val) {
-    INode mapPrime = map.update(mapKey(val), epoch,
-            new AFn() {
-              public Object invoke(Object v) {
-                ISet s = (ISet) v;
-                return s == null ? new SingleContainer(leafOffset(val)) : s.add(epoch, leafOffset(val));
-              }
-            });
+  private class AddFn : AFn {
+    public short leafSize;
+    public long epoch;
+    public long val;
+
+    public AddFn(short leafSize, long epoch, long val) {
+      this.leafSize = leafSize;
+      this.epoch = epoch;
+      this.val = val;
+    }
+
+    public new Object invoke(Object v) {
+      ISet s = (ISet) v;
+      return s == null ? new SingleContainer(leafOffset(leafSize, val)) : s.add(epoch, leafOffset(leafSize, val));
+    }
+  }
+  
+  public ISet add(long epoch, long val)
+  {
+    INode mapPrime = map.update(mapKey(val), epoch, new AddFn(leafSize, epoch, val));
     if (mapPrime == map) {
       countt = -1;
       return this;
@@ -214,16 +226,25 @@ public class IntSet : ISet {
     }
   }
 
-  
-  
+  private class RemoveFn : AFn {
+    public short leafSize;
+    public long epoch;
+    public long val;
+
+    public RemoveFn(short leafSize, long epoch, long val) {
+      this.leafSize = leafSize;
+      this.epoch = epoch;
+      this.val = val;
+    }
+
+    public new Object invoke(Object v) {
+      ISet s = (ISet) v;
+      return s == null ? null : s.remove(epoch, leafOffset(leafSize, val));
+    }
+  }
+
   public ISet remove(long epoch, long val) {
-    INode mapPrime = map.update(mapKey(val), epoch,
-            new AFn() {
-              public Object invoke(Object v) {
-                ISet s = (ISet) v;
-                return s == null ? null : s.remove(epoch, leafOffset(val));
-              }
-            });
+    INode mapPrime = map.update(mapKey(val), epoch, new RemoveFn(leafSize, epoch, val));
     if (mapPrime == map) {
       countt = -1;
       return this;
@@ -234,7 +255,39 @@ public class IntSet : ISet {
 
   public bool contains(long val) {
     ISet s = (ISet) map.get(mapKey(val), null);
-    return s != null && s.contains(leafOffset(val));
+    return s != null && s.contains(leafOffset(leafSize, val));
+  }
+
+  private class RangeFnA : AFn {
+    public short leafSize;
+    public long epoch;
+    public long min;
+
+    public RangeFnA(short leafSize, long epoch, long min) {
+      this.leafSize = leafSize;
+      this.epoch = epoch;
+      this.min = min;
+    }
+
+    public new Object invoke(Object v) {
+      return v != null ? ((ISet) v).range(epoch, leafOffset(leafSize, min), leafSize) : null;
+    }
+  }
+
+  private class RangeFnB : AFn {
+    public short leafSize;
+    public long epoch;
+    public long max;
+
+    public RangeFnB(short leafSize, long epoch, long max) {
+      this.leafSize = leafSize;
+      this.epoch = epoch;
+      this.max = max;
+    }
+
+    public new Object invoke(Object v) {
+      return v != null ? ((ISet)v).range(epoch, 0, leafOffset(leafSize, max)) : null;
+    }
   }
 
   public ISet range(long epoch, long min, long max) {
@@ -245,7 +298,7 @@ public class IntSet : ISet {
 
     if (mapKey(min) == mapKey(max)) {
       ISet set = (ISet) map.get(mapKey(min), null);
-      set = set == null ? null : set.range(epoch, leafOffset(min), leafOffset(max));
+      set = set == null ? null : set.range(epoch, leafOffset(leafSize, min), leafOffset(leafSize, max));
 
       return set == null
               ? new IntSet(leafSize)
@@ -256,18 +309,8 @@ public class IntSet : ISet {
     mapPrime = mapPrime == null
             ? Nodes.Empty.EMPTY
             : mapPrime
-            .update(mapKey(min), epoch,
-                    new AFn() {
-                      public Object invoke(Object v) {
-                        return v != null ? ((ISet) v).range(epoch, leafOffset(min), leafSize) : null;
-                      }
-                    })
-            .update(mapKey(max), epoch,
-                    new AFn() {
-                      public Object invoke(Object v) {
-                        return v != null ? ((ISet)v).range(epoch, 0, leafOffset(max)) : null;
-                      }
-                    });
+            .update(mapKey(min), epoch, new RangeFnA(leafSize, epoch, min))
+            .update(mapKey(max), epoch, new RangeFnB(leafSize, epoch, max));
 
     return new IntSet(leafSize, log2LeafSize, mapPrime);
   }
@@ -341,20 +384,27 @@ public class IntSet : ISet {
     return new IntSet(leafSize, log2LeafSize, node);
   }
 
+  private class UnionFn : AFn {
+    public long epoch;
+
+    public UnionFn(long epoch) {
+      this.epoch = epoch;
+    }
+
+    public new Object invoke(Object a, Object b) {
+      if (a == null) return b;
+      if (b == null) return a;
+      return ((ISet) a).union(epoch, (ISet) b);
+    }
+  }
+
   public ISet union(long epoch, ISet sv) {
     IntSet s = (IntSet) sv;
     if (s.leafSize != leafSize) {
       throw new InvalidOperationException("Cannot merge int-sets of different density.");
     }
-    return new IntSet(leafSize, log2LeafSize,
-            map.merge(s.map, epoch,
-                    new AFn() {
-                      public Object invoke(Object a, Object b) {
-                        if (a == null) return b;
-                        if (b == null) return a;
-                        return ((ISet) a).union(epoch, (ISet) b);
-                      }
-                    }));
+
+    return new IntSet(leafSize, log2LeafSize, map.merge(s.map, epoch, new UnionFn(epoch)));
   }
 
   public ISet difference(long epoch, ISet sv) {
