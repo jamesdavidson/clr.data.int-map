@@ -60,7 +60,7 @@
   IRadix
   (mergeWith [_ b f]
     (let [^PersistentIntMap b b
-          epoch' (inc (Math/max (.epoch b) epoch))]
+          epoch' (inc (Math/Max (.epoch b) epoch))]
       (PersistentIntMap.
         (.merge root (.root b) epoch' f)
         epoch'
@@ -607,7 +607,7 @@
 (defn union
   "Returns the union of two bitsets."
   [^PersistentIntSet a ^PersistentIntSet b]
-  (let [epoch (inc (long (Math/max (.epoch a) (.epoch b))))]
+  (let [epoch (inc (long (Math/Max (.epoch a) (.epoch b))))]
     (PersistentIntSet.
       (.union ^IntSet (.int-set a) epoch (.int-set b))
       epoch
@@ -616,7 +616,7 @@
 (defn intersection
   "Returns the intersection of two bitsets."
   [^PersistentIntSet a ^PersistentIntSet b]
-  (let [epoch (inc (long (Math/max (.epoch a) (.epoch b))))]
+  (let [epoch (inc (long (Math/Max (.epoch a) (.epoch b))))]
     (PersistentIntSet.
       (.intersection ^IntSet (.int-set a) epoch (.int-set b))
       epoch
@@ -625,7 +625,7 @@
 (defn difference
   "Returns the difference between two bitsets."
   [^PersistentIntSet a ^PersistentIntSet b]
-  (let [epoch (inc (long (Math/max (.epoch a) (.epoch b))))]
+  (let [epoch (inc (long (Math/Max (.epoch a) (.epoch b))))]
     (PersistentIntSet.
       (.difference ^IntSet (.int-set a) epoch (.int-set b))
       epoch
