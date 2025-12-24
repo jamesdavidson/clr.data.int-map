@@ -8,7 +8,7 @@
 
 namespace clojure.data.int_map;
 
-//import java.util.Iterator;
+using System.Collections;
 
 public interface ISet {
   ISet add(long epoch, long val);
@@ -16,7 +16,7 @@ public interface ISet {
   bool contains(long val);
 
   ISet range(long epoch, long min, long max);
-  //Iterator elements(long offset, bool reverse);
+  IEnumerator elements(long offset, bool reverse);
   long count();
 
   BitSet toBitSet();

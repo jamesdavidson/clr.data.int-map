@@ -9,6 +9,7 @@
 namespace clojure.data.int_map;
 
 using clojure.lang;
+using System.Collections;
 
 public class IntSet : ISet {
 
@@ -58,19 +59,19 @@ public class IntSet : ISet {
       return new BitSetContainer(epoch, bitSet);
     }
 
-    // public Iterator elements(long offset, bool reverse) {
-    //   List<long> ns = new ArrayList<long>(bitSet.Cardinality());
-    //   int idx = 0;
-    //   while (idx < bitSet.Length()) {
-    //     idx = bitSet.NextSetBit(idx);
-    //     ns.Add(offset + idx);
-    //     idx++;
-    //   }
-    //   if (reverse) {
-    //     Collections.reverse(ns);
-    //   }
-    //   return ns.iterator();
-    // }
+    public IEnumerator elements(long offset, bool reverse) {
+      ArrayList ns = new (bitSet.Cardinality());
+      int idx = 0;
+      while (idx < bitSet.Length) {
+        idx = bitSet.NextSetBit(idx);
+        ns.Add(offset + idx);
+        idx++;
+      }
+      if (reverse) {
+        ns.Reverse();
+      }
+      return ns.GetEnumerator();
+    }
 
     public long count() {
       return bitSet.Cardinality();
@@ -133,27 +134,9 @@ public class IntSet : ISet {
       return 1;
     }
 
-    // public Iterator elements(long offset, bool reverse) {
-    //   long val = this.val + offset;
-    //   return new Iterator() {
-    //
-    //     private bool isDone = false;
-    //
-    //     public bool hasNext() {
-    //       return !isDone;
-    //     }
-    //
-    //     public Object next() {
-    //       if (isDone) throw new NoSuchElementException();
-    //       isDone = true;
-    //       return val;
-    //     }
-    //
-    //     public void remove() {
-    //       throw new UnsupportedOperationException();
-    //     }
-    //   };
-    // }
+    public IEnumerator elements(long offset, bool reverse) {
+      yield return this.val + offset;
+    }
 
     public BitSet toBitSet() {
       BitSet bitSet = new BitSet(val);
@@ -231,6 +214,8 @@ public class IntSet : ISet {
     }
   }
 
+  
+  
   public ISet remove(long epoch, long val) {
     INode mapPrime = map.update(mapKey(val), epoch,
             new AFn() {
@@ -287,47 +272,29 @@ public class IntSet : ISet {
     return new IntSet(leafSize, log2LeafSize, mapPrime);
   }
 
-  // public Iterator elements(long offset, final bool reverse) {
-  //   final Iterator it = map.iterator(INode.IterationType.ENTRIES, reverse);
-  //   return new Iterator() {
-  //
-  //     private Iterator parentIterator = it;
-  //     private Iterator iterator = null;
-  //
-  //     private void tryAdvance() {
-  //       while ((iterator == null || !iterator.hasNext()) && parentIterator.hasNext()) {
-  //         MapEntry entry = (MapEntry) parentIterator.next();
-  //         ISet set = (ISet) entry.val();
-  //         long fullOffset = offset + ((Long)entry.key()) << log2LeafSize;
-  //         iterator = set == null ? null : set.elements(fullOffset, reverse);
-  //       }
-  //     }
-  //
-  //     public bool hasNext() {
-  //       tryAdvance();
-  //       return iterator == null ? false : iterator.hasNext();
-  //     }
-  //
-  //     public Object next() {
-  //       tryAdvance();
-  //       return iterator.next();
-  //     }
-  //
-  //     public void remove() {
-  //       throw new InvalidOperationException();
-  //     }
-  //   };
-  // }
+  public IEnumerator elements(long offset, bool reverse) {
+    IEnumerator it = map.iterator(INode.IterationType.ENTRIES, reverse);
+    while (it.MoveNext()) {
+      MapEntry entry = (MapEntry)it.Current;
+      ISet set = (ISet) entry.val();
+      long fullOffset = offset + (long)entry.key() << log2LeafSize;
+      IEnumerator iterator = set == null ? null : set.elements(fullOffset, reverse);
+      while (iterator.MoveNext())
+      {
+        yield return iterator.Current;
+      }
+    }
+  }
 
   public long count() {
-    if (count >= 0) {
-      return count;
+    if (countt >= 0) {
+      return countt;
     }
 
     long cnt = 0;
-    Iterator i =  map.iterator(INode.IterationType.VALS, false);
-    while (i.hasNext()) {
-      ISet s = (ISet) i.next();
+    IEnumerator i =  map.iterator(INode.IterationType.VALS, false);
+    while (i.MoveNext()) {
+      ISet s = (ISet) i.Current;
       if (s != null) cnt += s.count();
     }
     return cnt;
@@ -339,35 +306,38 @@ public class IntSet : ISet {
 
   public ISet intersection(long epoch, ISet sv) {
     IntSet s = (IntSet) sv;
-    Iterator i1 = map.iterator(INode.IterationType.ENTRIES, false);
-    Iterator i2 = s.map.iterator(INode.IterationType.ENTRIES, false);
+    IEnumerator i1 = map.iterator(INode.IterationType.ENTRIES, false);
+    IEnumerator i2 = s.map.iterator(INode.IterationType.ENTRIES, false);
 
     // one is empty, so is the intersection
-    if (!i1.hasNext() || !i2.hasNext()) {
+    if (!i1.MoveNext() || !i2.MoveNext())
+    {
       return new IntSet(leafSize);
-    }
+    };
 
     INode node = Nodes.Empty.EMPTY;
 
-    MapEntry e1 = (MapEntry) i1.next();
-    MapEntry e2 = (MapEntry) i2.next();
-    while (true) {
-      long k1 = (Long) e1.key();
-      long k2 = (Long) e2.key();
+    MapEntry e1 = (MapEntry) i1.Current;
+    MapEntry e2 = (MapEntry) i2.Current;
+    while (true)
+    {
+      if (e1 == null || e2 == null)
+        throw new InvalidOperationException("Something went wrong");
+      long k1 = (long) e1.key();
+      long k2 = (long) e2.key();
       if (k1 == k2 && e1.val() != null && e2.val() != null) {
         node = node.assoc(k1, epoch, null, ((ISet)e1.val()).intersection(epoch, (ISet)e2.val()));
-        if (!i1.hasNext() || !i2.hasNext()) break;
-        e1 = (MapEntry) i1.next();
-        e2 = (MapEntry) i2.next();
+        if (!i1.MoveNext() || !i2.MoveNext()) break;
+        e1 = (MapEntry) i1.Current;
+        e2 = (MapEntry) i2.Current;
       } else if (k1 < k2) {
-        if (!i1.hasNext()) break;
-        e1 = (MapEntry) i1.next();
+        if (!i1.MoveNext()) break;
+        e1 = (MapEntry) i1.Current;
       } else {
-        if (!i2.hasNext()) break;
-        e2 = (MapEntry) i2.next();
+        if (!i2.MoveNext()) break;
+        e2 = (MapEntry) i2.Current;
       }
     }
-
     return new IntSet(leafSize, log2LeafSize, node);
   }
 
@@ -389,42 +359,47 @@ public class IntSet : ISet {
 
   public ISet difference(long epoch, ISet sv) {
     IntSet s = (IntSet) sv;
-    Iterator i1 = map.iterator(INode.IterationType.ENTRIES, false);
-    Iterator i2 = s.map.iterator(INode.IterationType.ENTRIES, false);
+    IEnumerator i1 = map.iterator(INode.IterationType.ENTRIES, false);
+    IEnumerator i2 = s.map.iterator(INode.IterationType.ENTRIES, false);
 
-    if (!i1.hasNext() || !i2.hasNext()) {
+    if (!i1.MoveNext() || !i2.MoveNext())
+    {
       return this;
-    }
+    };
 
     INode node = Nodes.Empty.EMPTY;
 
-    MapEntry e1 = (MapEntry) i1.next();
-    MapEntry e2 = (MapEntry) i2.next();
-    while (true) {
-      long k1 = (Long) e1.key();
-      long k2 = (Long) e2.key();
+    MapEntry e1 = (MapEntry) i1.Current;
+    MapEntry e2 = (MapEntry) i2.Current;
+    while (true)
+    {
+      if (e1 == null || e2 == null)
+        throw new InvalidOperationException("Something went wrong");
+
+      long k1 = (long) e1.key();
+      long k2 = (long) e2.key();
 
       if (k1 == k2 && e1.val() != null && e2.val() != null) {
         node = node.assoc(k1, epoch, null, ((ISet)e1.val()).difference(epoch, (ISet) e2.val()));
-        if (!i1.hasNext() || !i2.hasNext()) break;
-        e1 = (MapEntry) i1.next();
-        e2 = (MapEntry) i2.next();
+        if (!i1.MoveNext() || !i2.MoveNext()) break;
+        e1 = (MapEntry) i1.Current;
+        e2 = (MapEntry) i2.Current;
       } else if (k1 <= k2 && e1.val() != null) {
         node = node.assoc(k1, epoch, null, e1.val());
-        if (!i1.hasNext()) break;
-        e1 = (MapEntry) i1.next();
+        if (!i1.MoveNext()) break;
+        e1 = (MapEntry) i1.Current;
       } else {
-        if (!i2.hasNext()) {
+        if (!i2.MoveNext()) {
           node = node.assoc(k1, epoch, null, e1.val());
           break;
         }
-        e2 = (MapEntry) i2.next();
+        e2 = (MapEntry) i2.Current;
       }
     }
 
-    while (i1.hasNext()) {
-      e1 = (MapEntry) i1.next();
-      node = node.assoc((Long)e1.key(), epoch, null, e1.val());
+    while (i1.MoveNext()) {
+      e1 = (MapEntry) i1.Current;
+      node = node.assoc((long)e1.key(), epoch, null, e1.val());
     }
 
     return new IntSet(leafSize, log2LeafSize, node);
