@@ -6,7 +6,7 @@
     [clojure.set :as set]
     [clojure.core.reducers :as r]
     [clojure.data.int-map :as i]
-    [collection-check :as check]
+    [collection-check.core :as check]
     [clojure.test.check.generators :as gen]
     [clojure.test.check.properties :as prop]
     [clojure.test.check.clojure-test :as ct :refer (defspec)]))
@@ -23,17 +23,17 @@
 
 (defn is-same-collection [a b]
   (let [msg (format "(class a)=%s (class b)=%s a=%s b=%s"
-                    (.getName (class a)) (.getName (class b)) a b)]
-    (is (= (count a) (count b) (.size a) (.size b)) msg)
+                    (.get_Name (class a)) (.get_Name (class b)) a b)]
+    (is (= (count a) (count b) (.get_Count a) (.get_Count b)) msg)
     (is (= a b) msg)
     (is (= b a) msg)
-    (is (.equals ^Object a b) msg)
-    (is (.equals ^Object b a) msg)
-    (is (= (.hashCode ^Object a) (.hashCode ^Object b)) msg)))
+    (is (.Equals ^Object a b) msg)
+    (is (.Equals ^Object b a) msg)
+    (is (= (.GetHashCode ^Object a) (.GetHashCode ^Object b)) msg)))
 
 (defn is-same-clj-collection [a b]
   (let [msg (format "(class a)=%s (class b)=%s a=%s b=%s"
-                    (.getName (class a)) (.getName (class b)) a b)]
+                    (.get_Name (class a)) (.get_Name (class b)) a b)]
     (is-same-collection a b)
     (is (= (hash a) (hash b)) msg)))
 
@@ -44,7 +44,7 @@
                    (sorted-set-by < 11 13 17)
                    (i/int-set [11 13 17])
                    (i/dense-int-set [11 13 17])]
-        non-clj-sets [(java.util.HashSet. [11 13 17])]]
+        non-clj-sets [#_(java.util.HashSet. [11 13 17])]]
     (doseq [c1 (concat clj-sets non-clj-sets),
             c2 (concat clj-sets non-clj-sets)]
       (is-same-collection c1 c2))
@@ -57,7 +57,7 @@
                    (sorted-map 11 13, 17 19)
                    (sorted-map-by < 11 13, 17 19)
                    (i/int-map 11 13, 17 19)]
-        non-clj-maps [(java.util.HashMap. {11 13, 17 19})]]
+        non-clj-maps [#_(java.util.HashMap. {11 13, 17 19})]]
     (doseq [c1 (concat clj-maps non-clj-maps),
             c2 (concat clj-maps non-clj-maps)]
       (is-same-collection c1 c2))
@@ -148,25 +148,25 @@
    [clojure.data.int_map
     INode
     Nodes
-    Nodes$Leaf
-    Nodes$Empty
-    Nodes$BinaryBranch
-    Nodes$Branch])
+    Nodes+Leaf
+    Nodes+Empty
+    Nodes+BinaryBranch
+    Nodes+Branch])
 
 #_(defn view-tree [m]
   (let [r (.root m)]
     (v/view-tree
-      #(or (instance? Nodes$BinaryBranch %) (instance? Nodes$Branch %))
-      #(if (instance? Nodes$BinaryBranch %)
+      #(or (instance? Nodes+BinaryBranch %) (instance? Nodes+Branch %))
+      #(if (instance? Nodes+BinaryBranch %)
          [(.a %) (.b %)]
          (remove nil? (.children %)))
       r
       :node->descriptor (fn [n]
                           {:label (cond
-                                    (instance? Nodes$Leaf n)
+                                    (instance? Nodes+Leaf n)
                                     (str (.key n) "," (.value n))
 
-                                    (instance? Nodes$Branch n)
+                                    (instance? Nodes+Branch n)
                                     (str (.offset n))
 
                                     :else
@@ -175,17 +175,17 @@
 #_(defn view-set [s]
   (let [r (-> s .int-set .map)]
     (v/view-tree
-      #(or (instance? Nodes$BinaryBranch %) (instance? Nodes$Branch %))
-      #(if (instance? Nodes$BinaryBranch %)
+      #(or (instance? Nodes+BinaryBranch %) (instance? Nodes+Branch %))
+      #(if (instance? Nodes+BinaryBranch %)
          [(.a %) (.b %)]
          (remove nil? (.children %)))
       r
       :node->descriptor (fn [n]
                           {:label (cond
-                                    (instance? Nodes$Leaf n)
+                                    (instance? Nodes+Leaf n)
                                     (str (.key n) "," (.value n))
 
-                                    (instance? Nodes$Branch n)
+                                    (instance? Nodes+Branch n)
                                     (str (.offset n))
 
                                     :else
@@ -206,7 +206,7 @@
       (get-field :root)
       tree-hierarchy)
 
-    clojure.lang.PersistentHashMap$BitmapIndexedNode
+    clojure.lang.PersistentHashMap+BitmapIndexedNode
     (let [ary (get-field :array m)]
       (concat
         (->> ary
@@ -220,13 +220,13 @@
           (remove nil?)
           (map tree-hierarchy))))
 
-    clojure.lang.PersistentHashMap$ArrayNode
+    clojure.lang.PersistentHashMap+ArrayNode
     (->> m
       (get-field :array)
       (remove nil?)
       (map tree-hierarchy))
 
-    clojure.lang.PersistentHashMap$HashCollisionNode
+    clojure.lang.PersistentHashMap+HashCollisionNode
     (->> m
       (get-field :array)
       (partition 2)
@@ -237,18 +237,18 @@
       (get-field :root)
       tree-hierarchy)
 
-    clojure.data.int_map.Nodes$BinaryBranch
+    clojure.data.int_map.Nodes+BinaryBranch
     (->> [(get-field :left m) (get-field :right m)]
       (remove nil?)
       (map tree-hierarchy))
 
-    clojure.data.int_map.Nodes$Branch
+    clojure.data.int_map.Nodes+Branch
     (->> m
       (get-field :children)
       (remove nil?)
       (map tree-hierarchy))
 
-    clojure.data.int_map.Nodes$Leaf
+    clojure.data.int_map.Nodes+Leaf
     (get-field :key m)
 
     m))
