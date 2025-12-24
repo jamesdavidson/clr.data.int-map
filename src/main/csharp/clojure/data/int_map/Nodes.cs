@@ -9,6 +9,7 @@
 namespace clojure.data.int_map;
 
 using clojure.lang;
+using System.Collections;
 
 public class Nodes {
 
@@ -74,37 +75,9 @@ public class Nodes {
       return a.count() + b.count();
     }
 
-    // public Iterator iterator(final IterationType type, final bool reverse) {
-    //   return new Iterator() {
-    //     bool first = true;
-    //     Iterator iterator = reverse ? b.iterator(type, reverse) : a.iterator(type, reverse);
-    //
-    //     public bool hasNext() {
-    //       if (iterator.hasNext()) {
-    //         return true;
-    //       }
-    //
-    //       if (first) {
-    //         first = false;
-    //         iterator = reverse ? a.iterator(type, reverse) : b.iterator(type, reverse);
-    //       }
-    //
-    //       return iterator.hasNext();
-    //     }
-    //
-    //     public Object next() {
-    //       if (hasNext()) {
-    //         return iterator.next();
-    //       } else {
-    //         throw new NoSuchElementException();
-    //       }
-    //     }
-    //
-    //     public void remove() {
-    //       throw new UnsupportedOperationException();
-    //     }
-    //   };
-    // }
+    public IEnumerator iterator(INode.IterationType type, bool reverse) {
+      return reverse ? b.iterator(type, reverse) : a.iterator(type, reverse);
+    }
 
     public INode range(long min, long max) {
       if (max < 0) {
@@ -322,49 +295,18 @@ public class Nodes {
               children == null ? this :
               new Branch(prefix, offsett, epoch, children);
     }
-
-    // public Iterator iterator(final IterationType type, final bool reverse) {
-    //   return new Iterator() {
-    //
-    //     private byte idx = (byte)(reverse ? 16 : -1);
-    //     private Iterator iterator = null;
-    //
-    //     private void advanceToNext() {
-    //       while (reverse ? --idx >= 0 : ++idx < 16) {
-    //         INode c = children[idx];
-    //         if (c != null) {
-    //           iterator = children[idx].iterator(type, reverse);
-    //           if (iterator.hasNext()) {
-    //             return;
-    //           }
-    //         }
-    //       }
-    //       iterator = null;
-    //     }
-    //
-    //     public bool hasNext() {
-    //         if (iterator != null && iterator.hasNext()) {
-    //             return true;
-    //         }
-    //         advanceToNext();
-    //         return iterator != null;
-    //     }
-    //
-    //     public Object next() {
-    //       if (iterator != null && iterator.hasNext()) {
-    //         return iterator.next();
-    //       } else {
-    //         advanceToNext();
-    //         if (iterator != null) return iterator.next();
-    //         throw new NoSuchElementException();
-    //       }
-    //     }
-    //
-    //     public void remove() {
-    //       throw new UnsupportedOperationException();
-    //     }
-    //   };
-    // }
+    public IEnumerator iterator(INode.IterationType type, bool reverse) {
+      byte idx = (byte)(reverse ? 16 : -1);
+      while (reverse ? --idx >= 0 : ++idx < 16) {
+        INode c = children[idx];
+        if (c != null) {
+          IEnumerator iterator = children[idx].iterator(type, reverse);
+          while (iterator.MoveNext()) {
+            yield return iterator.Current;
+          }
+        }
+      }
+    }
 
     public Object get(long k, Object defaultVal) {
       INode n = children[indexOf(k)];
@@ -614,38 +556,21 @@ public class Nodes {
       this.value = value;
     }
 
-    // public Iterator iterator(IterationType type, bool reverse) {
-    //   return new Iterator() {
-    //
-    //     bool iterated = false;
-    //
-    //     public bool hasNext() {
-    //       return !iterated;
-    //     }
-    //
-    //     public Object next() {
-    //       if (iterated) {
-    //         throw new NoSuchElementException();
-    //       } else {
-    //         iterated = true;
-    //         switch(type) {
-    //           case KEYS:
-    //             return key;
-    //           case VALS:
-    //             return value;
-    //           case ENTRIES:
-    //             return new clojure.lang.MapEntry(key, value);
-    //           default:
-    //             throw new IllegalStateException();
-    //         }
-    //       }
-    //     }
-    //
-    //     public void remove() {
-    //       throw new UnsupportedOperationException();
-    //     }
-    //   };
-    // }
+    public IEnumerator iterator(INode.IterationType type, bool reverse) {
+      switch(type) {
+        case INode.IterationType.KEYS:
+          yield return key;
+          break;
+        case INode.IterationType.VALS:
+          yield return value;
+          break;
+        case INode.IterationType.ENTRIES:
+          yield return new MapEntry(key, value);
+          break;
+        default:
+          throw new InvalidOperationException();
+      }
+    }
 
     public INode range(long min, long max) {
       return (min <= key && key <= max) ? this : null;
@@ -721,22 +646,10 @@ public class Nodes {
       return this;
     }
 
-    // public Iterator iterator(IterationType type, bool reverse) {
-    //     return new Iterator() {
-    //
-    //       public bool hasNext() {
-    //         return false;
-    //       }
-    //
-    //       public Object next() {
-    //         throw new NoSuchElementException();
-    //       }
-    //
-    //       public void remove() {
-    //         throw new UnsupportedOperationException();
-    //       }
-    //     };
-    // }
+    public IEnumerator iterator(INode.IterationType type, bool reverse)
+    {
+      yield break;
+    }
 
     public Object reduce(IFn f, Object init) {
       return init;

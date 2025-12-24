@@ -8,8 +8,8 @@
 
 namespace clojure.data.int_map;
 
-//import java.util.Iterator;
 using clojure.lang;
+using System.Collections;
 
 public interface INode {
 
@@ -20,7 +20,7 @@ public interface INode {
     }
 
     long count();
-    //Iterator iterator(IterationType type, bool reverse);
+    IEnumerator iterator(IterationType type, bool reverse);
     INode range(long min, long max);
 
     INode merge(INode node, long epoch, IFn f);
