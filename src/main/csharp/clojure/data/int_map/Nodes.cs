@@ -75,9 +75,16 @@ public class Nodes {
       return a.count() + b.count();
     }
 
-    public IEnumerator iterator(INode.IterationType type, bool reverse) {
-      yield return reverse ? b.iterator(type, reverse) : a.iterator(type, reverse);
-      yield return reverse ? a.iterator(type, reverse) : b.iterator(type, reverse);
+    public IEnumerator iterator(INode.IterationType type, bool reverse)
+    {
+      for (var it = reverse ? b.iterator(type, reverse) : a.iterator(type, reverse); it.MoveNext();)
+      {
+        yield return it.Current;
+      }
+      for (var it = reverse ? a.iterator(type, reverse) : b.iterator(type, reverse); it.MoveNext();)
+      {
+        yield return it.Current;
+      }
     }
 
     public INode range(long min, long max) {
