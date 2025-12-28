@@ -95,6 +95,7 @@ public class IntSet : ISet
             var set = (ISet)entry.val();
             var fullOffset = (offset + (long)entry.key()) << log2LeafSize;
             var iterator = set == null ? null : set.elements(fullOffset, reverse);
+            if (iterator == null) continue;
             while (iterator.MoveNext()) yield return iterator.Current;
         }
     }
