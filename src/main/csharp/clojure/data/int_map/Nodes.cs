@@ -186,13 +186,13 @@ public class Nodes {
 
   public class Branch : INode {
     public long prefix, mask, epoch;
-    public int offsett;
+    public int offset;
     long countt;
     public INode[] children;
 
     public Branch(long prefix, int offset, long epoch, long count, INode[] children) {
       this.prefix = prefix;
-      this.offsett = offset;
+      this.offset = offset;
       this.epoch = epoch;
       this.mask = 0xfL << offset;
       this.countt = count;
@@ -201,7 +201,7 @@ public class Nodes {
 
     public Branch(long prefix, int offset, long epoch, INode[] children) {
       this.prefix = prefix;
-      this.offsett = offset;
+      this.offset = offset;
       this.epoch = epoch;
       this.mask = 0xfL << offset;
       this.countt = -1;
@@ -209,7 +209,7 @@ public class Nodes {
     }
 
     public int indexOf(long key) {
-      return (int) ((key & mask) >>> offsett);
+      return (int) ((key & mask) >>> offset);
     }
 
     private INode[] arraycopy() {
@@ -230,7 +230,7 @@ public class Nodes {
     }
 
     public INode range(long min, long max) {
-      long nodeMask = offsett < 60 ? ((1L << (offsett + 4)) - 1) : ~(1L<<63);
+      long nodeMask = offset < 60 ? ((1L << (offset + 4)) - 1) : ~(1L<<63);
       long nodeMin = prefix & ~nodeMask;
       long nodeMax = prefix | nodeMask;
       switch (overlap(min, max, nodeMin, nodeMax)) {
@@ -294,7 +294,7 @@ public class Nodes {
       return numChildren == 0 ? null :
               numChildren == 1 ? onlyChild :
               children == null ? this :
-              new Branch(prefix, offsett, epoch, children);
+              new Branch(prefix, offset, epoch, children);
     }
     public IEnumerator iterator(INode.IterationType type, bool reverse) {
       byte idx = (byte)(reverse ? 16 : -1);
@@ -335,29 +335,29 @@ public class Nodes {
           return new BinaryBranch(this, branch);
         }
 
-        if (offsetPrime > offsett && offsetPrime > branch.offsett) {
+        if (offsetPrime > this.offset && offsetPrime > branch.offset) {
             return new Branch(prefix, Nodes.offset(prefix, branch.prefix), epoch, new INode[16])
                 .merge(this, epoch, f)
                 .merge(node, epoch, f);
         }
 
         // we contain the other node
-        if (offsett > branch.offsett) {
+        if (this.offset > branch.offset) {
           int idx = indexOf(branch.prefix);
           INode[] childrenn = arraycopy();
           INode n = childrenn[idx];
           childrenn[idx] = n != null ? n.merge(node, epoch, f) : node;
-          return new Branch(prefix, offsett, epoch, childrenn);
+          return new Branch(prefix, this.offset, epoch, childrenn);
 
         }
 
-        if (offsett < branch.offsett) {
+        if (this.offset < branch.offset) {
           return branch.merge(this, epoch, invert(f));
         }
 
         INode[] children = new INode[16];
         INode[] branchChildren = branch.children;
-        int offset = this.offsett;
+        int offset = this.offset;
 
         for (int i = 0; i < 16; i++) {
           INode n = this.children[i];
@@ -385,7 +385,7 @@ public class Nodes {
         return new BinaryBranch(this, new Leaf(k, v));
       } else if (k < 0 && prefix >= 0) {
         return new BinaryBranch(new Leaf(k, v), this);
-      } else if (offsetPrime > this.offsett) {
+      } else if (offsetPrime > this.offset) {
         return new Branch(k, offsetPrime, epoch, new INode[16])
                 .merge(this, epoch, null)
                 .assoc(k, epoch, f, v);
@@ -402,7 +402,7 @@ public class Nodes {
           } else {
             INode[] children = arraycopy();
             children[idx] = new Leaf(k, v);
-            return new Branch(prefix, offsett, epoch, countt, children);
+            return new Branch(prefix, offset, epoch, countt, children);
           }
         } else {
           INode nPrime = n.assoc(k, epoch, f, v);
@@ -412,7 +412,7 @@ public class Nodes {
           } else {
             INode[] children = arraycopy();
             children[idx] = nPrime;
-            return new Branch(prefix, offsett, epoch, countt, children);
+            return new Branch(prefix, offset, epoch, countt, children);
           }
         }
       }
@@ -433,7 +433,7 @@ public class Nodes {
           children[idx] = nPrime;
           for (int i = 0; i < 16; i++) {
             if (children[i] != null) {
-              return new Branch(prefix, offsett, epoch, countt, children);
+              return new Branch(prefix, offset, epoch, countt, children);
             }
           }
           return null;
@@ -449,7 +449,7 @@ public class Nodes {
         return new BinaryBranch(this, new Leaf(k, f.invoke(null)));
       } else if (k < 0 && prefix >= 0) {
         return new BinaryBranch(new Leaf(k, f.invoke(null)), this);
-      } else if (offsetPrime > this.offsett) {
+      } else if (offsetPrime > this.offset) {
         return new Branch(k, offsetPrime, epoch, new INode[16])
                 .merge(this, epoch, null)
                 .update(k, epoch, f);
@@ -465,7 +465,7 @@ public class Nodes {
         } else {
           INode[] children = arraycopy();
           children[idx] = new Leaf(k, f.invoke(null));
-          return new Branch(prefix, offsett, epoch, countt, children);
+          return new Branch(prefix, offset, epoch, countt, children);
         }
       } else {
         INode nPrime = n.update(k, epoch, f);
@@ -475,7 +475,7 @@ public class Nodes {
         } else {
           INode[] children = arraycopy();
           children[idx] = nPrime;
-          return new Branch(prefix, offsett, epoch, countt, children);
+          return new Branch(prefix, offset, epoch, countt, children);
         }
       }
     }
