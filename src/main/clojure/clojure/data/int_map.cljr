@@ -580,6 +580,10 @@
   (get_Count [_]
     (.count int-set))
 
+  System.Collections.IEnumerable
+  (^System.Collections.IEnumerator GetEnumerator [_]
+    (.elements int-set 0 false))
+
   clojure.lang.ITransientSet
   (count [_]
     (.count int-set))
