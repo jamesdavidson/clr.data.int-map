@@ -47,7 +47,7 @@ public class Nodes {
     return deBruijnIndex[0xFF & (int) ((n * 0x022fdd63cc95386dL) >>> 58)];
   }
 
-  public static int calcOffset(long a, long b) {
+  public static int offset(long a, long b) {
     return bitLog2(highestBit(a ^ b, 1)) & ~0x3;
   }
 
@@ -326,7 +326,7 @@ public class Nodes {
     public INode merge(INode node, long epoch, IFn f) {
       if (node is Branch) {
         Branch branch = (Branch) node;
-        int offsetPrime = calcOffset(prefix, branch.prefix);
+        int offsetPrime = Nodes.offset(prefix, branch.prefix);
 
         if (branch.prefix < 0 && this.prefix >= 0) {
           return new BinaryBranch(branch, this);
@@ -335,7 +335,7 @@ public class Nodes {
         }
 
         if (offsetPrime > offsett && offsetPrime > branch.offsett) {
-            return new Branch(prefix, calcOffset(prefix, branch.prefix), epoch, new INode[16])
+            return new Branch(prefix, Nodes.offset(prefix, branch.prefix), epoch, new INode[16])
                 .merge(this, epoch, f)
                 .merge(node, epoch, f);
         }
@@ -377,7 +377,7 @@ public class Nodes {
     }
 
     public INode assoc(long k, long epoch, IFn f, Object v) {
-      int offsetPrime = calcOffset(k, prefix);
+      int offsetPrime = offset(k, prefix);
 
       // need a new branch above us both
       if (prefix < 0 && k >= 0) {
@@ -441,7 +441,7 @@ public class Nodes {
     }
 
     public INode update(long k, long epoch, IFn f) {
-      int offsetPrime = calcOffset(k, prefix);
+      int offsetPrime = offset(k, prefix);
 
       // need a new branch above us both
       if (prefix < 0 && k >= 0) {
@@ -605,7 +605,7 @@ public class Nodes {
       } else if (k < 0 && key >= 0) {
         return new BinaryBranch(new Leaf(k, v), this);
       } else {
-        return new Branch(k, calcOffset(k, key), epoch, new INode[16])
+        return new Branch(k, offset(k, key), epoch, new INode[16])
                 .assoc(key, epoch, f, value)
                 .assoc(k, epoch, f, v);
       }
