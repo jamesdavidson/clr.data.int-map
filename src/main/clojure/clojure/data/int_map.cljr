@@ -105,8 +105,8 @@
         (if (and (.MoveNext it1) (.MoveNext it2))
           (let [e1 (.-Current it1)
                 e2 (.-Current it2)]
-            (if (and (Util/equiv (.getKey e1) (.getKey e2))
-                  (Util/equiv (.getValue e1) (.getValue e2)))
+            (if (and (Util/equiv (.key e1) (.key e2))
+                  (Util/equiv (.val e1) (.val e2)))
               (recur it1 it2)
               false))
           true))
@@ -115,8 +115,8 @@
       (loop [it (.GetEnumerator this)]
         (if (.MoveNext it)
           (let [e (.-Current it)]
-            (if (and (.containsKey x (.getKey e))
-                  (Util/equiv (.getValue e) (.get x (.getKey e))))
+            (if (and (.containsKey x (.key e))
+                  (Util/equiv (.val e) (.valAt x (.key e))))
               (recur it)
               false))
           true))))
@@ -191,8 +191,8 @@
         (if (and (.MoveNext it1) (.MoveNext it2))
           (let [e1 (.-Current it1)
                 e2 (.-Current it2)]
-            (if (and (Util/equals (.getKey e1) (.getKey e2))
-                  (Util/equals (.getValue e1) (.getValue e2)))
+            (if (and (Util/equals (.key e1) (.key e2))
+                  (Util/equals (.val e1) (.val e2)))
               (recur it1 it2)
               false))
           true))
@@ -202,8 +202,8 @@
         (if (.MoveNext it)
           (let [e (.-Current it)]
             (if e
-              (if (and (.containsKey x (.getKey e))
-                       (Util/equals (.getValue e) (.get x (.getKey e))))
+              (if (and (.containsKey x (.key e))
+                       (Util/equals (.val e) (.valAt x (.key e))))
                 (recur it)
                 false)
               false))
