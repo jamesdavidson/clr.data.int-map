@@ -89,8 +89,8 @@
 
   (equiv [this x]
     (cond
-      ;; (not (instance? java.util.Map x))
-      ;; false
+      (not (instance? System.Collections.IDictionary x))
+      false
 
       (and (instance? clojure.lang.IPersistentMap x)
            (not (instance? clojure.lang.MapEquivalence x)))
@@ -179,8 +179,8 @@
       (identical? this x)
       true
 
-      ;; (not (instance? java.util.Map x))
-      ;; false
+      (not (instance? System.Collections.IDictionary x))
+      false
 
       (not= (count this) (.get_Count x))
       false
@@ -271,6 +271,12 @@
 ;;     (->> this seq set))
 ;;   (iterator [this]
 ;;     (.iterator root INode+IterationType/ENTRIES false))
+
+  System.Collections.IDictionary
+  (Contains [this k]
+    (.containsKey this k))
+  (get_Item [this k]
+    (.valAt this k))
 
   clojure.lang.IPersistentMap
   (assocEx [this k v]
