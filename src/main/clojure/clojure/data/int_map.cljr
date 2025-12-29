@@ -112,7 +112,7 @@
           true))
 
       :else
-      (loop [it (.GetEnumerator this)]
+      (loop [it (.GetEnumerator ^System.Collections.IEnumerable this)]
         (if (.MoveNext it)
           (let [e (.-Current it)]
             (if (and (.containsKey x (.key e))
@@ -198,7 +198,7 @@
           true))
 
       :else
-      (loop [it (.GetEnumerator this)]
+      (loop [it (.GetEnumerator ^System.Collections.IEnumerable this)]
         (if (.MoveNext it)
           (let [e (.-Current it)]
             (if e
@@ -277,6 +277,8 @@
     (.containsKey this k))
   (get_Item [this k]
     (.valAt this k))
+  (^System.Collections.IEnumerator GetEnumerator [this]
+    (.iterator root INode+IterationType/ENTRIES false))
 
   clojure.lang.IPersistentMap
   (assocEx [this k v]
