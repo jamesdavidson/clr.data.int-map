@@ -379,7 +379,7 @@
 
   clojure.lang.ITransientMap
 
-  (^clojure.lang.ITransientMap assoc [this k v]
+  (^clojure.lang.ITransientAssociative assoc [this k v]
     (let [k (long k)
           root' (.assoc root (long k) epoch default-merge v)]
       (if (identical? root' root)
