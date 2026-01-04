@@ -386,7 +386,7 @@
         this
         (TransientIntMap. root' epoch meta))))
 
-  (conj [this o]
+  (^clojure.lang.ITransientCollection conj [this o]
     (if (map? o)
       (reduce #(apply assoc! %1 %2) this o)
       (.assoc this (nth o 0) (nth o 1))))
