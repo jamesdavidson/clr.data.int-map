@@ -304,7 +304,7 @@ public class Nodes {
               new Branch(prefix, offset, epoch, children);
     }
     public IEnumerator iterator(INode.IterationType type, bool reverse) {
-      byte idx = (byte)(reverse ? 16 : -1);
+      sbyte idx = (sbyte)(reverse ? 16 : -1);
       while (reverse ? --idx >= 0 : ++idx < 16) {
         INode c = children[idx];
         if (c != null) {
