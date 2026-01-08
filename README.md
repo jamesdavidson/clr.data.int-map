@@ -6,6 +6,8 @@ Requires ClojureCLR >= 1.6
 
 Passes test suite but does not implement r/CollFold.
 
+Benchmark suite has not been ported yet.
+
 ## docs
 
 See https://clojure.github.io/data.int-map
