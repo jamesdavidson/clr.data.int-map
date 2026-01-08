@@ -13,14 +13,17 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+    - uses: olegtarasov/get-tag@v2.1.4
+      id: tagVersion
+      with:
+        tagRegex: "v(.*)"
     - name: Restore, build and create NuGet package
-      run: dotnet pack
+      run: dotnet pack -p:PublishVersion="${{ steps.tagVersion.outputs.tag }}"
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: ./bin/Release/clojure.data.int-map.${{ github.ref }}.nupkg
-        asset_name: clojure.data.int-map.${{ github.ref_name }}.nupkg
+        file: ./bin/Release/clojure.data.int-map.${{ steps.tagVersion.outputs.tag }}.nupkg
         tag: ${{ github.ref }}
         overwrite: true
         body: ""
