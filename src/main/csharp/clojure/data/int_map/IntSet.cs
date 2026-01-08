@@ -280,7 +280,7 @@ public class IntSet : ISet
 
         public bool contains(long val)
         {
-            return bitSet.Get((short)val);
+            return bitSet.SafeGet((short)val);
         }
 
         public ISet range(long epoch, long min, long max)

@@ -48,4 +48,9 @@ public static class BitArrayExtensions
             bitArray.Length = index + 1;
         bitArray.Set(index, value);
     }
+
+    public static bool SafeGet(this BitArray bitArray, int index)
+    {
+        return index < bitArray.Length && bitArray.Get(index);
+    }
 }
