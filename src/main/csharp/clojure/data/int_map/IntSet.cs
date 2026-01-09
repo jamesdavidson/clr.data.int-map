@@ -334,10 +334,14 @@ public class IntSet : ISet
         {
             var bitSet = (BitArray)this.bitSet.Clone();
             var bitSet2 = val.toBitArray();
-            if (bitSet.Count != bitSet2.Count)
+            if (bitSet.Length < bitSet2.Length)
+            {
+                bitSet.Length = bitSet2.Length;
+            }
+            if (bitSet.Length > bitSet2.Length)
             {
                 bitSet2 = bitSet2.Clone() as BitArray;
-                bitSet2.Length = bitSet.Count;
+                bitSet2.Length = bitSet.Length;
             }
             bitSet.And(bitSet2);
             return new BitArrayContainer(epoch, bitSet);
@@ -347,10 +351,14 @@ public class IntSet : ISet
         {
             var bitSet = (BitArray)this.bitSet.Clone();
             var bitSet2 = val.toBitArray();
-            if (bitSet.Count != bitSet2.Count)
+            if (bitSet.Length < bitSet2.Length)
+            {
+                bitSet.Length = bitSet2.Length;
+            }
+            if (bitSet.Length > bitSet2.Length)
             {
                 bitSet2 = bitSet2.Clone() as BitArray;
-                bitSet2.Length = bitSet.Count;
+                bitSet2.Length = bitSet.Length;
             }
             bitSet.Or(bitSet2);
             return new BitArrayContainer(epoch, bitSet);
